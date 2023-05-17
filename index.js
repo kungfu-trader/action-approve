@@ -11,7 +11,7 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  console.log('token length:', token.length);
+  console.log('token length:', argv.token.length);
 
   if (argv.repo == 'test-rollback-packages') {
     await lib.approveAndMerge(argv);
