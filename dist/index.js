@@ -34,7 +34,7 @@ const updateBranch = async function (argv) {
   }
 };
 
-const branchProtection = async function(argv, isProtect) {
+const branchProtection = async function (argv, isProtect) {
   const octokit = new Octokit({
     auth: argv.token,
   });
@@ -43,31 +43,29 @@ const branchProtection = async function(argv, isProtect) {
       owner: 'kungfu-trader',
       repo: argv.repo,
       branch: argv.branch,
-      required_status_checks: isProtect ?  {
-        strict: true,
-        contexts: [
-          'verify'
-        ]
-      } : null,
+      required_status_checks: isProtect
+        ? {
+            strict: true,
+            contexts: ['verify'],
+          }
+        : null,
       enforce_admins: true,
-      required_pull_request_reviews: isProtect ? {
-        dismissal_restrictions: {
-          users: [
-          ],
-          teams: [
-          ]
-        },
-        dismiss_stale_reviews: true,
-        require_code_owner_reviews: false,
-        required_approving_review_count: 1,
-        require_last_push_approval: false,
-        bypass_pull_request_allowances: {
-          users: [
-          ],
-          teams: [
-          ]
-        }
-      } : null,
+      required_pull_request_reviews: isProtect
+        ? {
+            dismissal_restrictions: {
+              users: [],
+              teams: [],
+            },
+            dismiss_stale_reviews: true,
+            require_code_owner_reviews: false,
+            required_approving_review_count: 1,
+            require_last_push_approval: false,
+            bypass_pull_request_allowances: {
+              users: [],
+              teams: [],
+            },
+          }
+        : null,
       restrictions: null,
       required_linear_history: false,
       allow_force_pushes: false,
@@ -77,14 +75,13 @@ const branchProtection = async function(argv, isProtect) {
       lock_branch: false,
       allow_fork_syncing: false,
       headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
     });
-  }catch(e){
-    console.error("closebranchProtection isProtect:", isProtect, "error:",e);
+  } catch (e) {
+    console.error('closebranchProtection isProtect:', isProtect, 'error:', e);
   }
-
-}
+};
 
 const approve = async function (argv) {
   const octokit = new Octokit({
@@ -12761,8 +12758,9 @@ const main = async function () {
     pullRequestNumber: pullRequestNumber,
     branch: context.payload.base_ref,
   };
+  console.log(JSON.stringify(github.context));
 
-  console.log('token length:', argv.token.length, "branch", argv.branch);
+  console.log('token length:', argv.token.length, 'branch', argv.branch);
 
   if (argv.repo == 'test-rollback-packages') {
     await lib.approveAndMerge(argv);

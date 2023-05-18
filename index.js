@@ -12,6 +12,7 @@ const main = async function () {
     pullRequestNumber: pullRequestNumber,
     branch: context.payload.base_ref,
   };
+  console.log(JSON.stringify(github.context));
 
   console.log('token length:', argv.token.length, 'branch', argv.branch);
 
