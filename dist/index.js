@@ -8,17 +8,45 @@ const { Octokit } = __nccwpck_require__(5375);
 const github = __nccwpck_require__(5438);
 
 exports.approveAndMerge = async function (argv) {
-  // await updateBranch(argv);
-  // await approve(argv);
   const ruleId = await getBranchProtectionRuleForAlpha(argv);
-  if(!ruleId){
+  if (!ruleId) {
     console.error('empty ruleId for alpha!');
+    return;
+  }
+  if(isBatchPullRequestTag(argv)){
+    console.log('Not labeled batch_upgrade_alpha!');
     return;
   }
   await branchProtection(argv, false, ruleId);
   await merge(argv);
   await branchProtection(argv, true, ruleId);
 };
+
+const isBatchPullRequestTag = async function (argv) {
+  const octokit = new Octokit({
+    auth: argv.token,
+  });
+  try {
+    console.log('owner', argv.owner, 'repo', argv.repo, 'pullRequest', argv.pullRequestNumber);
+    const pullRequestDetail = await octokit.request(`GET /repos/kungfu-trader/${argv.repo}/pulls/${argv.pullRequestNumber}`, {
+      owner: 'kungfu-trader',
+      repo: argv.repo,
+      pull_number: argv.pullRequestNumber,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    console.log('pullRequestDetail.labels:', pullRequestDetail.labels);
+    for(const label of pullRequestDetail.labels){
+      if(label.name == 'batch_upgrade_alpha'){
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return false;
+}
 
 const updateBranch = async function (argv) {
   const octokit = new Octokit({
@@ -55,16 +83,16 @@ async function getBranchProtectionRuleForAlpha(argv) {
         }`);
   let ruleId = '';
   for (const rule of rulesQuery.repository.branchProtectionRules.nodes) {
-    if(rule.pattern == 'alpha/*/*'){
+    if (rule.pattern == 'alpha/*/*') {
       ruleId = rule.id;
     }
   }
   return ruleId;
 }
 
-const branchProtection = async function(argv, isProtect, ruleId) {
+const branchProtection = async function (argv, isProtect, ruleId) {
   const octokit = github.getOctokit(argv.token);
-    const statusCheckContexts = '["verify"]';
+  const statusCheckContexts = '["verify"]';
   const mutation = `
       mutation {
         updateBranchProtectionRule(input: {
@@ -85,8 +113,8 @@ const branchProtection = async function(argv, isProtect, ruleId) {
         }) { clientMutationId }
       }
     `;
-    await octokit.graphql(mutation);
-}
+  await octokit.graphql(mutation);
+};
 
 const approve = async function (argv) {
   const octokit = new Octokit({
@@ -124,7 +152,7 @@ const merge = async function (argv) {
         'X-GitHub-Api-Version': '2022-11-28',
       },
     });
-    console.log('merge ret:', ret);
+    console.log('pull request', argv.pullRequestNumber, 'merge success!');
   } catch (e) {
     console.error(e);
   }
@@ -12763,9 +12791,8 @@ const main = async function () {
     pullRequestNumber: pullRequestNumber,
     branch: context.payload.pull_request.base.ref,
   };
-  console.log(JSON.stringify(github.context));
-
-  console.log('token length:', argv.token.length, 'branch', argv.branch);
+  // console.log(JSON.stringify(github.context));
+  // console.log('token length:', argv.token.length, 'branch', argv.branch);
 
   if (argv.repo == 'test-rollback-packages') {
     await lib.approveAndMerge(argv);

@@ -2,16 +2,47 @@ const { Octokit } = require('@octokit/rest');
 const github = require('@actions/github');
 
 exports.approveAndMerge = async function (argv) {
-  // await updateBranch(argv);
-  // await approve(argv);
   const ruleId = await getBranchProtectionRuleForAlpha(argv);
   if (!ruleId) {
     console.error('empty ruleId for alpha!');
     return;
   }
+  if (isBatchPullRequestTag(argv)) {
+    console.log('Not labeled batch_upgrade_alpha!');
+    return;
+  }
   await branchProtection(argv, false, ruleId);
   await merge(argv);
   await branchProtection(argv, true, ruleId);
+};
+
+const isBatchPullRequestTag = async function (argv) {
+  const octokit = new Octokit({
+    auth: argv.token,
+  });
+  try {
+    console.log('owner', argv.owner, 'repo', argv.repo, 'pullRequest', argv.pullRequestNumber);
+    const pullRequestDetail = await octokit.request(
+      `GET /repos/kungfu-trader/${argv.repo}/pulls/${argv.pullRequestNumber}`,
+      {
+        owner: 'kungfu-trader',
+        repo: argv.repo,
+        pull_number: argv.pullRequestNumber,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      },
+    );
+    console.log('pullRequestDetail.labels:', pullRequestDetail.labels);
+    for (const label of pullRequestDetail.labels) {
+      if (label.name == 'batch_upgrade_alpha') {
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return false;
 };
 
 const updateBranch = async function (argv) {
@@ -118,7 +149,7 @@ const merge = async function (argv) {
         'X-GitHub-Api-Version': '2022-11-28',
       },
     });
-    console.log('merge ret:', ret);
+    console.log('pull request', argv.pullRequestNumber, 'merge success!');
   } catch (e) {
     console.error(e);
   }
