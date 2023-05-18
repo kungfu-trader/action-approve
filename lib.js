@@ -33,10 +33,12 @@ const isBatchPullRequestTag = async function (argv) {
         },
       },
     );
-    console.log('pullRequestDetail.labels:', pullRequestDetail.labels);
-    for (const label of pullRequestDetail.labels) {
-      if (label.name == 'batch_upgrade_alpha') {
-        return true;
+    console.log('pullRequestDetail', JSON.stringify(pullRequestDetail));
+    if (pullRequestDetail.labels) {
+      for (const label of pullRequestDetail.labels) {
+        if (label.name == 'batch_upgrade_alpha') {
+          return true;
+        }
       }
     }
   } catch (e) {
