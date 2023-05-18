@@ -7,7 +7,8 @@ exports.approveAndMerge = async function (argv) {
     console.error('empty ruleId for alpha!');
     return;
   }
-  if (isBatchPullRequestTag(argv)) {
+  const tag = await isBatchPullRequestTag(argv);
+  if (tag) {
     console.log('Not labeled batch_upgrade_alpha!');
     return;
   }

@@ -13,7 +13,8 @@ exports.approveAndMerge = async function (argv) {
     console.error('empty ruleId for alpha!');
     return;
   }
-  if (isBatchPullRequestTag(argv)) {
+  const tag = await isBatchPullRequestTag(argv);
+  if (tag) {
     console.log('Not labeled batch_upgrade_alpha!');
     return;
   }
@@ -40,11 +41,11 @@ const isBatchPullRequestTag = async function (argv) {
       },
     );
     console.log('pullRequestDetail', JSON.stringify(pullRequestDetail));
-      for (const label of pullRequestDetail.data.labels) {
-        if (label.name == 'batch_upgrade_alpha') {
-          return true;
-        }
+    for (const label of pullRequestDetail.data.labels) {
+      if (label.name == 'batch_upgrade_alpha') {
+        return true;
       }
+    }
   } catch (e) {
     console.error(e);
   }
