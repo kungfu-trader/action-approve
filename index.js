@@ -10,7 +10,7 @@ const main = async function () {
     owner: context.payload.repository.owner.login,
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
-    branch: context.payload.base_ref,
+    branch: context.payload.pull_request.base.ref,
   };
   console.log(JSON.stringify(github.context));
 
