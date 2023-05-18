@@ -2,7 +2,7 @@ name: "Close Issue"
 author: "Kungfu Trader"
 description: "Close Issue When Merged"
 inputs:
-  approve-token:
+  token:
     description: "secrets.GITHUB_TOKEN"
     required: true
 runs:

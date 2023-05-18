@@ -6,12 +6,14 @@ const main = async function () {
   const context = github.context;
   const pullRequestNumber = context.payload.pull_request.number;
   const argv = {
-    token: core.getInput('approve-token'),
+    token: core.getInput('token'),
     owner: context.payload.repository.owner.login,
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
+    branch: context.payload.base_ref,
   };
-  console.log('token length:', argv.token.length);
+
+  console.log('token length:', argv.token.length, 'branch', argv.branch);
 
   if (argv.repo == 'test-rollback-packages') {
     await lib.approveAndMerge(argv);
