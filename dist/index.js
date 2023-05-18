@@ -5,13 +5,19 @@
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 const { Octokit } = __nccwpck_require__(5375);
+const github = __nccwpck_require__(5438);
 
 exports.approveAndMerge = async function (argv) {
   // await updateBranch(argv);
   // await approve(argv);
-  await branchProtection(argv, false);
+  const ruleId = await getBranchProtectionRuleForAlpha(argv);
+  if(!ruleId){
+    console.error('empty ruleId for alpha!');
+    return;
+  }
+  await branchProtection(argv, false, ruleId);
   await merge(argv);
-  await branchProtection(argv, true);
+  await branchProtection(argv, true, ruleId);
 };
 
 const updateBranch = async function (argv) {
@@ -34,54 +40,53 @@ const updateBranch = async function (argv) {
   }
 };
 
-const branchProtection = async function (argv, isProtect) {
-  const octokit = new Octokit({
-    auth: argv.token,
-  });
-  try {
-    await octokit.request(`PUT /repos/kungfu-trader/${argv.repo}/branches/${argv.branch}/protection`, {
-      owner: 'kungfu-trader',
-      repo: argv.repo,
-      branch: argv.branch,
-      required_status_checks: isProtect
-        ? {
-            strict: true,
-            contexts: ['verify'],
+async function getBranchProtectionRuleForAlpha(argv) {
+  const octokit = github.getOctokit(argv.token);
+  const rulesQuery = await octokit.graphql(`
+        query {
+          repository(name: "${argv.repo}", owner: "kungfu-trader") {
+            branchProtectionRules(first:100) {
+              nodes {
+                id
+                pattern
+              }
+            }
           }
-        : null,
-      enforce_admins: true,
-      required_pull_request_reviews: isProtect
-        ? {
-            dismissal_restrictions: {
-              users: [],
-              teams: [],
-            },
-            dismiss_stale_reviews: true,
-            require_code_owner_reviews: false,
-            required_approving_review_count: 1,
-            require_last_push_approval: false,
-            bypass_pull_request_allowances: {
-              users: [],
-              teams: [],
-            },
-          }
-        : null,
-      restrictions: null,
-      required_linear_history: false,
-      allow_force_pushes: false,
-      allow_deletions: false,
-      block_creations: false,
-      required_conversation_resolution: isProtect,
-      lock_branch: false,
-      allow_fork_syncing: false,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    });
-  } catch (e) {
-    console.error('closebranchProtection isProtect:', isProtect, 'error:', e);
+        }`);
+  let ruleId = '';
+  for (const rule of rulesQuery.repository.branchProtectionRules.nodes) {
+    if(rule.pattern == 'alpha/*/*'){
+      ruleId = rule.id;
+    }
   }
-};
+  return ruleId;
+}
+
+const branchProtection = async function(argv, isProtect, ruleId) {
+  const octokit = github.getOctokit(argv.token);
+    const statusCheckContexts = '["verify"]';
+  const mutation = `
+      mutation {
+        updateBranchProtectionRule(input: {
+          branchProtectionRuleId: "${ruleId}"
+          requiresApprovingReviews: ${isProtect},
+          requiredApprovingReviewCount: 1,
+          dismissesStaleReviews: ${isProtect},
+          restrictsReviewDismissals: ${isProtect},
+          requiresStatusChecks: ${isProtect},
+          requiresCodeOwnerReviews: false,
+          requiredStatusCheckContexts: ${statusCheckContexts},
+          requiresStrictStatusChecks: ${isProtect},
+          requiresConversationResolution: ${isProtect},
+          isAdminEnforced: true,
+          restrictsPushes: false,
+          allowsForcePushes: false,
+          allowsDeletions: false
+        }) { clientMutationId }
+      }
+    `;
+    await octokit.graphql(mutation);
+}
 
 const approve = async function (argv) {
   const octokit = new Octokit({
