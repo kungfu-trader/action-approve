@@ -11,9 +11,7 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  if (argv.repo == 'test-rollback-packages') {
-    await lib.approveAndMerge(argv);
-  }
+  await lib.approveAndMerge(argv);
 };
 if (require.main === module) {
   main().catch((error) => {
