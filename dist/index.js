@@ -8,8 +8,10 @@ const { Octokit } = __nccwpck_require__(5375);
 
 exports.approveAndMerge = async function (argv) {
   // await updateBranch(argv);
-  await approve(argv);
+  // await approve(argv);
+  await branchProtection(argv, false);
   await merge(argv);
+  await branchProtection(argv, true);
 };
 
 const updateBranch = async function (argv) {
@@ -31,6 +33,58 @@ const updateBranch = async function (argv) {
     console.error(e);
   }
 };
+
+const branchProtection = async function(argv, isProtect) {
+  const octokit = new Octokit({
+    auth: argv.token,
+  });
+  try {
+    await octokit.request(`PUT /repos/kungfu-trader/${argv.repo}/branches/${argv.branch}/protection`, {
+      owner: 'kungfu-trader',
+      repo: argv.repo,
+      branch: argv.branch,
+      required_status_checks: isProtect ?  {
+        strict: true,
+        contexts: [
+          'verify'
+        ]
+      } : null,
+      enforce_admins: true,
+      required_pull_request_reviews: isProtect ? {
+        dismissal_restrictions: {
+          users: [
+          ],
+          teams: [
+          ]
+        },
+        dismiss_stale_reviews: true,
+        require_code_owner_reviews: false,
+        required_approving_review_count: 1,
+        require_last_push_approval: false,
+        bypass_pull_request_allowances: {
+          users: [
+          ],
+          teams: [
+          ]
+        }
+      } : null,
+      restrictions: null,
+      required_linear_history: false,
+      allow_force_pushes: false,
+      allow_deletions: false,
+      block_creations: false,
+      required_conversation_resolution: isProtect,
+      lock_branch: false,
+      allow_fork_syncing: false,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+  }catch(e){
+    console.error("closebranchProtection isProtect:", isProtect, "error:",e);
+  }
+
+}
 
 const approve = async function (argv) {
   const octokit = new Octokit({
@@ -12701,12 +12755,14 @@ const main = async function () {
   const context = github.context;
   const pullRequestNumber = context.payload.pull_request.number;
   const argv = {
-    token: core.getInput('approve-token'),
+    token: core.getInput('token'),
     owner: context.payload.repository.owner.login,
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
+    branch: context.payload.base_ref,
   };
-  console.log('token length:', argv.token.length);
+
+  console.log('token length:', argv.token.length, "branch", argv.branch);
 
   if (argv.repo == 'test-rollback-packages') {
     await lib.approveAndMerge(argv);
