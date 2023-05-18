@@ -14,7 +14,7 @@ exports.approveAndMerge = async function (argv) {
     return;
   }
   const tag = await isBatchPullRequestTag(argv);
-  if (tag) {
+  if (!tag) {
     console.log('Not labeled batch_upgrade_alpha!');
     return;
   }
@@ -12794,9 +12794,7 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  if (argv.repo == 'test-rollback-packages') {
-    await lib.approveAndMerge(argv);
-  }
+  await lib.approveAndMerge(argv);
 };
 if (require.main === require.cache[eval('__filename')]) {
   main().catch((error) => {

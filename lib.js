@@ -8,7 +8,7 @@ exports.approveAndMerge = async function (argv) {
     return;
   }
   const tag = await isBatchPullRequestTag(argv);
-  if (tag) {
+  if (!tag) {
     console.log('Not labeled batch_upgrade_alpha!');
     return;
   }
