@@ -11,13 +11,11 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  await lib.closeIssue(argv);
+  await lib.approveAndMerge(argv);
 };
-
 if (require.main === module) {
   main().catch((error) => {
     console.error(error);
-    // 设置操作失败时退出
     core.setFailed(error.message);
   });
 }
