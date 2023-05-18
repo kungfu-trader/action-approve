@@ -40,13 +40,11 @@ const isBatchPullRequestTag = async function (argv) {
       },
     );
     console.log('pullRequestDetail', JSON.stringify(pullRequestDetail));
-    if(pullRequestDetail.labels){
-      for (const label of pullRequestDetail.labels) {
+      for (const label of pullRequestDetail.data.labels) {
         if (label.name == 'batch_upgrade_alpha') {
           return true;
         }
       }
-    } 
   } catch (e) {
     console.error(e);
   }
