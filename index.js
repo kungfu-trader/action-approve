@@ -11,7 +11,9 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  await lib.approveAndMerge(argv);
+  if (argv.token) {
+    await lib.approveAndMerge(argv);
+  }
 };
 if (require.main === module) {
   main().catch((error) => {
