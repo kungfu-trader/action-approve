@@ -73,23 +73,27 @@ const updateBranch = async function (argv) {
 };
 
 async function getBranchProtectionRuleForAlpha(argv) {
-  const octokit = github.getOctokit(argv.token);
-  const rulesQuery = await octokit.graphql(`
-        query {
-          repository(name: "${argv.repo}", owner: "kungfu-trader") {
-            branchProtectionRules(first:100) {
-              nodes {
-                id
-                pattern
+  let ruleId = '';
+  try {
+    const octokit = github.getOctokit(argv.token);
+    const rulesQuery = await octokit.graphql(`
+          query {
+            repository(name: "${argv.repo}", owner: "kungfu-trader") {
+              branchProtectionRules(first:100) {
+                nodes {
+                  id
+                  pattern
+                }
               }
             }
-          }
-        }`);
-  let ruleId = '';
-  for (const rule of rulesQuery.repository.branchProtectionRules.nodes) {
-    if (rule.pattern == 'alpha/*/*') {
-      ruleId = rule.id;
+          }`);
+    for (const rule of rulesQuery.repository.branchProtectionRules.nodes) {
+      if (rule.pattern == 'alpha/*/*') {
+        ruleId = rule.id;
+      }
     }
+  } catch (e) {
+    console.error(e);
   }
   return ruleId;
 }
@@ -12794,7 +12798,9 @@ const main = async function () {
     repo: context.payload.repository.name,
     pullRequestNumber: pullRequestNumber,
   };
-  await lib.approveAndMerge(argv);
+  if(argv.token){
+    await lib.approveAndMerge(argv);
+  }
 };
 if (require.main === require.cache[eval('__filename')]) {
   main().catch((error) => {
